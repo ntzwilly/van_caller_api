@@ -1,9 +1,11 @@
 class LocationsController < ApplicationController
   before_action :set_location, only: %i[ show edit update destroy ]
+  skip_before_action :verify_authenticity_token
 
   # GET /locations or /locations.json
   def index
     @locations = Location.all
+    render json: @locations
   end
 
   # GET /locations/1 or /locations/1.json
@@ -22,15 +24,12 @@ class LocationsController < ApplicationController
   # POST /locations or /locations.json
   def create
     @location = Location.new(location_params)
+    @location.geocode
 
-    respond_to do |format|
-      if @location.save
-        format.html { redirect_to location_url(@location), notice: "Location was successfully created." }
-        format.json { render :show, status: :created, location: @location }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @location.errors, status: :unprocessable_entity }
-      end
+    if @location.save
+      render json: @location, status: :created, location: @location 
+    else
+      render json: @location.errors, status: :unprocessable_entity 
     end
   end
 
@@ -38,10 +37,8 @@ class LocationsController < ApplicationController
   def update
     respond_to do |format|
       if @location.update(location_params)
-        format.html { redirect_to location_url(@location), notice: "Location was successfully updated." }
         format.json { render :show, status: :ok, location: @location }
       else
-        format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @location.errors, status: :unprocessable_entity }
       end
     end
@@ -52,7 +49,6 @@ class LocationsController < ApplicationController
     @location.destroy
 
     respond_to do |format|
-      format.html { redirect_to locations_url, notice: "Location was successfully destroyed." }
       format.json { head :no_content }
     end
   end
@@ -65,6 +61,6 @@ class LocationsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def location_params
-      params.require(:location).permit(:name, :address, :latitude, :longitude)
+      params.require(:location).permit(:street)
     end
 end
